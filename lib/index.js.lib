@@ -1,0 +1,20 @@
+'use script';
+import * as React from 'react';
+
+class #DatavModuleName# extends React.Component {
+  constructor( props ) {
+    super( props );
+
+    this.state = {
+
+    }
+
+  }
+
+  render() {
+    return <div></div>
+  }
+}
+
+if(!window.datavModule) window.datavModule = {};
+window.datavModule.#DatavModuleHashName# = #DatavModuleName#;

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>DataV</title>
+	</head>
+	<style>
+	body {
+		margin: 0;
+		font-family: 微软雅黑,黑体,Helvetica,华文黑体;
+	}
+	#container {
+		background: #fff;
+		width: 480px;
+		height: 320px;
+		border-radius: 5px;
+		overflow: hidden;
+		display: block;
+		box-shadow: 0 0 5px #000 inset;
+	}
+
+	.title {
+		position: relative;
+		height: 60px;
+		background: #efefef;
+		color: #333;
+		line-height: 60px;
+		text-align: center;
+		font-size: 18px;
+		font-weight: bold;
+		box-shadow: 0 1px 3px #ccc;
+	}
+
+	.title .close-button {
+		position: absolute;
+		top: 15px;
+		width: 30px;
+		right: 15px;
+		height: 30px;
+		background: #fff;
+		box-shadow: 1px 1px 3px #ccc;
+		border-radius: 50%;
+		cursor: pointer;
+	}
+
+	.title .return-button {
+		position: absolute;
+		top: 15px;
+		width: 30px;
+		left: 15px;
+		height: 30px;
+		background: #fff;
+		box-shadow: 1px 1px 3px #ccc;
+		border-radius: 50%;
+		cursor: pointer;
+		display: none;
+	}
+
+	.button-container {
+		position: absolute;
+		left: 0;
+		height: 240px;
+		top: 60px;
+		width: 100%;
+		overflow: auto;
+	}
+
+	.button-item {
+		width: 80%;
+		height: 36px;
+		line-height: 36px;
+		text-align: center;
+		background: #eee;
+		color: #333;
+		font-size: 13px;
+		margin: 20px auto;
+		border-radius: 3px;
+		box-shadow: 1px 1px 3px #ccc;
+		cursor: pointer;
+	}
+
+	.button-item:hover {
+		background: #e5e5e5;
+	}
+
+	.pages {
+		position: absolute;
+		left: 0;
+		height: 240px;
+		background: #fff;
+		top: 60px;
+		width: 100%;
+		overflow: auto;
+		z-index: 6;
+		display: none;
+	}
+
+	.pages-title {
+		height: 40px;
+		line-height: 40px;
+		margin-left: 60px;
+		font-size: 13px;
+	}
+
+	.pages-addr {
+		position: absolute;
+		top: 0;
+		right: 60px;
+		max-width: 200px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		height: 40px;
+		line-height: 40px;
+		font-size: 12px;
+		color: #999;
+	}
+
+	.copyright {
+		position: absolute;
+		bottom: 5px;
+		height: 15px;
+		line-height: 15px;
+		left: 5px;
+		font-size: 10px;
+		color: #999;
+		width: 470px;
+		text-align: center;
+
+	}
+
+	label {
+		display: inline-block;
+		width: 80px;
+		text-align: center;
+		margin-left: 60px;
+		height: 30px;
+		line-height: 30px;
+		font-size: 13px;
+		background: #e5e5e5;
+		border-radius: 3px 0 0 3px;
+		margin-bottom: 5px;
+	}
+
+	input {
+		width: 280px;
+		border-radius: 0 3px 3px 0;
+		height: 30px;
+		line-height: 30px;
+		padding: 0 10px;
+		box-sizing: border-box;
+		border: 1px solid #e5e5e5;
+		border-left: 0;
+		vertical-align: top;
+		outline: none;
+	}
+
+	input[type=submit] {
+		display: block;
+		margin: 5px auto;
+		width: 360px;
+		background: #69f;
+		color: #fff;
+		border-radius: 3px;
+		cursor: pointer;
+	}
+	</style>
+	<body>
+	<div id="container">
+		<div class="title">
+				DataV Tools
+				<i class="close-button"></i>
+				<i class="return-button"></i>
+		</div>
+		<div class="button-container">
+			<div class="button-item" id="createADataVModule">Create a Datav Module</div>
+		</div>
+		<div class="pages" id="createADataVModulePage">
+			<div class="pages-title">创建DataV模块</div>
+			<div class="pages-addr" id="page-addr" title=""></div>
+			<form onsubmit="return createADataVModuleSubmit()" id="createADataVModuleForm">
+				<label for="createADataVModule-name">模块名称</label><input name="name" id="createADataVModule-name" />
+				<label for="createADataVModule-description">模块描述</label><input name="description" id="createADataVModule-description" />
+				<label for="createADataVModule-enName">模块英文名</label><input name="enName" id="createADataVModule-enName" />
+				<label for="createADataVModule-git">Git地址</label><input name="enName" id="createADataVModule-git" />
+				<input type="submit" value="创建此模块">
+			</form>
+		</div>
+		<div class="copyright">
+			© 2013-2017 IWenKu.net All rights reserved. Design By Soar.gy
+		</div>
+	</div>
+	</body>
+	<script>
+		const electron = require('electron');
+		const ipcRenderer = electron.ipcRenderer;
+
+		let $ = (sel, node)=>{
+			if(node) return node.querySelector(sel);
+			return document.querySelector(sel);
+		}
+
+		let sendToMain = (channel, isResponse, ...args) => {
+			ipcRenderer.send(channel, ...args);
+
+				return new Promise((resolve, reject)=>{
+					if(isResponse) {
+						ipcRenderer.once(channel + 'Response', (e, resData)=>{
+							resolve(resData);
+						});
+					} else {
+						reject(false);
+					}
+				});
+
+		}
+
+		let changeAddr = addr => {
+			let pagesAddrEle = $("#page-addr");
+			pagesAddrEle.innerHTML = addr;
+			pagesAddrEle.setAttribute("title", addr);
+		}
+
+		let pageDisplay = pageElement => {
+			$('.return-button').style.display = pageElement? 'block': 'none';
+			if(pageElement){
+				pageElement.style.display = 'block';
+				$('.return-button').onclick = () => {
+					pageElement.style.display = 'none';
+					pageDisplay();
+				}
+			}
+		}
+
+		let createADataVModule = dirName => {
+			changeAddr( dirName );
+			pageDisplay( $("#createADataVModulePage") );
+		}
+
+		$('#createADataVModule').onclick = () => {
+				sendToMain("openDir", true).then(data=>{
+					let dirname = data.dirname;
+					let isHaveModule = data.isHaveModule;
+					if(isHaveModule) {
+						alert("此文件夹已存在DataV模块");
+						return;
+					}
+					if(dirname) createADataVModule(dirname);
+				});
+		}
+
+		let createADataVModuleSubmit = () => {
+			let data = {
+				name: $('#createADataVModule-name').value,
+				description: $('#createADataVModule-description').value,
+				enName: $('#createADataVModule-enName').value,
+				git: $('#createADataVModule-git').value,
+				dirname: $("#page-addr").innerHTML
+			}
+
+			sendToMain('createModule', true, data).then(data => {
+				if(data) {
+					alert("模块创建成功");
+				}else {
+					alert("模块创建失败");
+				}
+				$('.return-button').click();
+			})
+
+			return false;
+		}
+
+		$('.close-button').onclick = () => {
+			sendToMain("exitMain");
+		}
+
+
+	</script>
+</html>
